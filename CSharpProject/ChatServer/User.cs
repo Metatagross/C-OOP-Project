@@ -1,20 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Xml.Serialization;
 
 namespace ChatServer
 {
-    [Serializable]
-    class User
+    [Serializable()]
+    [XmlRoot("User")]
+    public class User
     {
         private string name;
         private string pass;
 
+        public User ( ):this("user", "pass")
+        {
+
+        }
         public User ( string name , string pass )
         {
             Name = name;
             Pass = pass;
         }
+        [XmlElement("Username")]
         public string Name
         {
             get
@@ -27,7 +34,7 @@ namespace ChatServer
                 name = value;
             }
         }
-
+        [XmlElement("Password")]
         public string Pass
         {
             get
@@ -67,5 +74,14 @@ namespace ChatServer
         {
             return string.Format("Username: {0}  Password: {1}" , Name , Pass);
         }
+    }
+
+    [Serializable()]
+    [System.Xml.Serialization.XmlRoot("UserCollection")]
+    public class UserCollection
+    {
+        [XmlArray("UserCollection")]
+        [XmlArrayItem("User" , typeof(User))]
+        public List<User> Users { get; set; }
     }
 }

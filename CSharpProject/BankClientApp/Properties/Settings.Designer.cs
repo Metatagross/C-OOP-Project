@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ClientImplementation.Properties
+namespace BankClientApp.Properties
 {
 
 

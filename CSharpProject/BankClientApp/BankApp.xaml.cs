@@ -1,21 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
 
-namespace ClientImplementation
+namespace BankClientApp
 {
-    public partial class UserGUI : Form
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class BankApp : Window
     {
-        public UserGUI ( )
+        public BankApp ( )
         {
             InitializeComponent();
         }
@@ -24,8 +32,11 @@ namespace ClientImplementation
         private BinaryWriter writer; // facilitates writing to the stream    
         private BinaryReader reader; // facilitates reading from the stream  
         private Thread readThread; // Thread for processing incoming messages
-        private string message = "";
-
+        private int logInCounter = 5;
+        private int scriptCounter = 12;
+        private int cardCounter = 12;
+        private string card=null;
+        private string script=null;
         public void RunClient ( )
         {
             TcpClient client;
@@ -33,61 +44,28 @@ namespace ClientImplementation
             // instantiate TcpClient for sending data to server
             try
             {
-                //DisplayMessage("Attempting connection\r\n");
-
-                // Step 1: create TcpClient and connect to server
                 client = new TcpClient();
                 client.Connect("127.0.0.1" , 50000);
 
-                // Step 2: get NetworkStream associated with TcpClient
                 output = client.GetStream();
 
-                // create objects for writing and reading across stream
                 writer = new BinaryWriter(output);
                 reader = new BinaryReader(output);
-
-                //DisplayMessage("\r\nGot I/O streams\r\n");
-                //DisableInput(false); // enable inputTextBox
-
-                // loop until server signals termination
-                do
-                {
-                    // Step 3: processing phase
-                    try
-                    {
-                        // read message from server        
-                        // message = reader.ReadString();
-                        // DisplayMessage("\r\n" + message);
-                    } // end try
-                    catch(Exception)
-                    {
-                        // handle exception if error in reading server data
-                        System.Environment.Exit(System.Environment.ExitCode);
-                    } // end catch
-                } while(message != "SERVER>>> TERMINATE");
-
-                // Step 4: close connection
-                writer.Close();
-                reader.Close();
-                output.Close();
-                client.Close();
-
-                Application.Exit();
             } // end try
             catch(Exception error)
             {
                 // handle exception if error in establishing connection
                 MessageBox.Show(error.ToString() , "Connection Error" ,
-                   MessageBoxButtons.OK , MessageBoxIcon.Error);
+                   MessageBoxButton.OK , MessageBoxImage.Error);
                 System.Environment.Exit(System.Environment.ExitCode);
             } // end catch
         } // end method RunClient
-        private void UserGUI_FormClosing ( object sender ,
-      FormClosingEventArgs e )
+        private void BankApp_Closing ( object sender , System.ComponentModel.CancelEventArgs e )
         {
+            writer.Write("The app is closing!");
             System.Environment.Exit(System.Environment.ExitCode);
         }
-        private void UserGUI_Load ( object sender , EventArgs e )
+        private void BankApp_Load ( object sender , RoutedEventArgs e )
         {
             readThread = new Thread(new ThreadStart(RunClient));
             readThread.Start();
@@ -107,23 +85,40 @@ namespace ClientImplementation
             }
         }
 
-        private void btnEnter_Click ( object sender , EventArgs e )
+        private void BtnEnter_Click ( object sender , RoutedEventArgs e )
         {
-            if(AreValid(txtbUser.Text , txtbPass.Text))
+            if(AreValid(txtbUser.Text , txtbPass.Password))
             {
-                txtbCipher.ReadOnly = false;
-                txtbGet.ReadOnly = false;
+                txtbScript.IsReadOnly = false;
+                txtbCard.IsReadOnly = false;
             }
             else
             {
-                MessageBox.Show("Invalid username or password!");
-                Close();
+                MessageBox.Show(String.Format($"Invalid username or password!\nRemaining tries {logInCounter}"));
+                if(logInCounter==0)
+                {
+                    Close();
+                }
+                logInCounter--;
             }
         }
 
-        private void btnCrypt_Click ( object sender , EventArgs e )
+        private void BtnScript_Click ( object sender , RoutedEventArgs e )
         {
-            writer.Write(String.Format($"Card: {txtbCipher.Text}"));
+            if(card==null||card!=txtbCard.Text)
+            {
+                card = txtbCard.Text;
+                cardCounter = 12;
+            }
+            else
+            {
+                cardCounter--;
+            }
+            if(cardCounter==0)
+            {
+                MessageBox.Show("Error! Too many tries!");
+            }
+            writer.Write(String.Format($"Card: {txtbCard.Text}"));
             string reply = reader.ReadString();
             if(reply.Contains("Invalid"))
             {
@@ -131,13 +126,26 @@ namespace ClientImplementation
             }
             else
             {
-                txtbReturnCypher.Text = reply;
+                txtbReturnScript.Text = reply;
             }
         }
 
-        private void btnGetCard_Click ( object sender , EventArgs e )
+        private void BtnCard_Click ( object sender , RoutedEventArgs e )
         {
-            writer.Write(String.Format($"Cypher: {txtbGet.Text}"));
+            if(script == null || script != txtbScript.Text)
+            {
+                script = txtbScript.Text;
+                scriptCounter = 12;
+            }
+            else
+            {
+                scriptCounter--;
+            }
+            if(scriptCounter == 0)
+            {
+                MessageBox.Show("Error! Too many tries!");
+            }
+            writer.Write(String.Format($"Cypher: {txtbScript.Text}"));
             string reply = reader.ReadString();
             if(reply.Contains("Invalid"))
             {
@@ -145,7 +153,7 @@ namespace ClientImplementation
             }
             else
             {
-                txtbReturnBank.Text = reply;
+                txtbReturnCard.Text = reply;
             }
         }
     }
